@@ -9,9 +9,46 @@ class Channel:
 
     def __init__(self, channel_id: str) -> None:
         """Экземпляр инициализируется id канала. Дальше все данные будут подтягиваться по API."""
-        self.channel_id: str = channel_id  # id канала
+
+        self.__channel_id: str = channel_id  # id канала
+
+        # Получаем данные канала по api
+        self.channel: dict = self.youtube.channels().list(id=self.__channel_id, part='snippet,statistics').execute()
+
+        # Создаём необходимые атрибуты
+        self.title: str = self.channel['items'][0]['snippet']['title']  # название канала
+        self.description: str = self.channel['items'][0]['snippet']['description']  # описание канала
+        self.url: str = f"https://www.youtube.com/channel/{self.channel['items'][0]['id']}"  # ссылка на канал
+        self.subscriberCount: int = int(self.channel['items'][0]['statistics']['subscriberCount'])  # число подписчиков
+        self.video_count: int = int(self.channel['items'][0]['statistics']['videoCount'])  # количество видео на канале
+        self.viewCount: int = int(self.channel['items'][0]['statistics']['viewCount'])  # количество просмотров
 
     def print_info(self) -> None:
         """Выводит в консоль информацию о канале."""
-        self.channel: dict = self.youtube.channels().list(id=self.channel_id, part='snippet,statistics').execute()
-        print(json.dumps(self.channel, indent=1))
+        print(json.dumps(self.channel, indent=2, ensure_ascii=False))
+
+    @property
+    def channel_id(self) -> str:
+        """Возвращает id канала """
+        return self.__channel_id
+
+    @classmethod
+    def get_service(cls) -> object:
+        """Возвращает объект для работы с YouTube API"""
+        return cls.youtube
+
+    def to_json(self, file_name) -> None:
+        """Сохраняет в файл значения атрибутов экземпляра Channel"""
+
+        # Создаем словарь на основе атрибутов
+        dict = {"channel_id": self.__channel_id,
+                "title": self.title,
+                "description": self.description,
+                "url": self.url,
+                "subscriberCount": self.subscriberCount,
+                "videoCount": self.video_count,
+                "viewCount": self.viewCount,
+                }
+        # Сохраняем словарь в файл
+        with open(file_name, "w", encoding='windows-1251') as outfile:
+            json.dump(dict, outfile, ensure_ascii=False)
